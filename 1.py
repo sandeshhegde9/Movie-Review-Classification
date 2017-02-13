@@ -9,25 +9,59 @@ import re
 #adds a row at the end containing probability P(True/1) for each attribute. (class 1-Positive Review).
 def NaiveBayes(data):
 	last_row=[0,0]
+	last_row1=[0,0]
 
 	#For each column get the ratio- no of True/No of category 1.
 	for j in range(2,len(data[0])):
 		count=0
 		pos_count=0
+		count1=0
+		neg_count=0
 		for i in range(len(data)):
 			if data[i][0]==1:
 				pos_count+=1
 				if data[i][j]==True:
 					count+=1
+			else:
+				neg_count+=1
+				if data[i][j]==True:
+					count1+=1
 		try:
 			rat=round(float(count)/pos_count,5)
 			last_row.append(rat)
 		except:pass
-	data.append(last_row)
+		try:
+			rat=round(float(count1)/neg_count,5)
+			last_row1.append(rat)
+		except:pass
+	data1=[]
+	data1.append(data[0])
+	data1.append(last_row)
+	data1.append(last_row1)
+	rat=round(float(pos_count)/(len(data)-1),5)
 	#print last_row,'\n\n\n'
 	#print data[len(data)-1]
-	return data
-		
+	return data1,rat
+
+
+def predict(model,data,p):
+	prob=1
+	prob1=1
+	for i in range(2,len(data)):
+		if data[i]==True:
+			prob=prob*model[1][i]
+		else:
+			prob=prob*(1-model[1][i])
+	prob=prob*p
+
+	for i in range(2,len(data)):
+		if data[i]==True:
+			prob1=prob1*model[2][i]
+		else:
+			prob1=prob1*model[2][i]
+	prob1=prob1*p
+	if prob>prob1:return 1
+	else:return 0
 
 def main():
 	data=[]
@@ -51,12 +85,13 @@ def main():
 	all_words=nltk.FreqDist(words)
 	word_feature=all_words.keys()[:1050]
 	l=len(word_feature)
-	print word_feature
-
 	#print word_feature
+
 	
 
-'''	try:#Remove empty strings(If any) and words such as I,and etc.
+
+	#Remove empty strings(If any) and words such as I,and etc.
+	try:
 		word_feature.remove('')
 		word_feature.remove('i')
 		word_feature.remove('and')
@@ -69,9 +104,9 @@ def main():
 		word_feature.insert(0,"Category")
 		word_feature.insert(1,"Text")
 	except:pass 
-	'''
 
-	data.insert(0,word_feature[:1000])
+
+	data.insert(0,word_feature[:1002])
 
 	#Now build the data matrix.
 	
@@ -87,6 +122,15 @@ def main():
 
 	#Get the probabilities using Naive Bayes method.
 
-	data=NaiveBayes(data)
+	model,pr=NaiveBayes(data)
+	#print len(model[0]),len(model[1]),len(model[2]),len(data[0])
+	#for a in model:
+	#	print a
+	count=0
+	for i in range(1,len(data)):
+		#print data[i][0]
+		if predict(model,data[i],pr)==data[i][0]:
+			count+=1
+	print (float(count)/len(data))
 
 main()
