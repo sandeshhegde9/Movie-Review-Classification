@@ -11,17 +11,19 @@ def NaiveBayes(data):
 	last_row=[0,0]
 	last_row1=[0,0]
 
-	#For each column get the ratio- no of True/No of category 1.
+	#For each column get the ratio- no of True/No of category 1 and 0.
 	for j in range(2,len(data[0])):
 		count=0
 		pos_count=0
 		count1=0
 		neg_count=0
 		for i in range(len(data)):
+			#For cat-1
 			if data[i][0]==1:
 				pos_count+=1
 				if data[i][j]==True:
 					count+=1
+			#For cat-0
 			else:
 				neg_count+=1
 				if data[i][j]==True:
@@ -72,7 +74,8 @@ def main():
 	for line in f1:
 		line=line.strip()
 		line=line.split('\t')
-		data.append([int(line[0]),line[1]]+[False for i in range(1000)])
+		data.append([int(line[0]),line[1]]+[False for i in range(2000)])
+
 		zzz=re.split('[ \t.]',line[1])
 		
 		try:zzz.remove('')
@@ -83,7 +86,7 @@ def main():
 	#Get the frequency Distribution of the words present and retain only 1000 most frequest words.
 
 	all_words=nltk.FreqDist(words)
-	word_feature=all_words.keys()[:1050]
+	word_feature=all_words.keys()[:2050]
 	l=len(word_feature)
 	#print word_feature
 
@@ -106,7 +109,7 @@ def main():
 	except:pass 
 
 
-	data.insert(0,word_feature[:1002])
+	data.insert(0,word_feature[:2002])
 
 	#Now build the data matrix.
 	
@@ -123,14 +126,37 @@ def main():
 	#Get the probabilities using Naive Bayes method.
 
 	model,pr=NaiveBayes(data)
-	#print len(model[0]),len(model[1]),len(model[2]),len(data[0])
-	#for a in model:
-	#	print a
+	#Count correct number of predictions and get the ratio correct predictions/total prediction.
 	count=0
 	for i in range(1,len(data)):
 		#print data[i][0]
 		if predict(model,data[i],pr)==data[i][0]:
 			count+=1
 	print (float(count)/len(data))
+	
+
+	#Now tag the test data using the classifier and write to a file
+	test=open('test1.txt','r')
+	out=open('TestResults.txt','w')
+	for line in test:
+		p1=1
+		p2=1
+		line=line.strip()
+		line1=re.split('[ ,.]',line)
+		for i in range(len(model[0])):
+			if model[0][i] in line1:
+				p1=model[1][i]*p1
+				p2=model[2][i]*p2
+			else:
+				p1=p1*(1-model[1][i])
+				p2=p2*(1-model[2][i])
+		p1=p1*pr
+		p2=p2*pr
+		if(p1>p2):
+			out.write(line+'  1\n')
+		else:
+			out.write(line+'  0\n')
+	test.close()
+	out.close()
 
 main()
